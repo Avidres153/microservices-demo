@@ -216,7 +216,6 @@ components:
       required:
         - type
         - value
-        - balance
         - accountId
       properties:
         date:
@@ -229,12 +228,7 @@ components:
             - WITHDRAWAL
         value:
           type: number
-          format: double
-        balance:
-          type: number
           format: decimal
-          minimum: 0
-          exclusiveMinimum: true
         accountId:
           type: integer
           format: int64
@@ -253,7 +247,7 @@ components:
           type: string
         value:
           type: number
-          format: double
+          format: decimal
         balance:
           type: number
           format: decimal

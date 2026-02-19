@@ -1,0 +1,92 @@
+services:
+  kafkabroker:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafkabroker
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafkabroker:29092,PLAINTEXT_HOST://localhost:9092'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafkabroker:9093'
+      KAFKA_LISTENERS: 'PLAINTEXT://kafkabroker:29092,CONTROLLER://kafkabroker:9093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_BROKER_ID: 1
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk' # Added a static cluster ID
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server kafkabroker:29092 --list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  customers_db:
+    image: postgres
+    environment:
+      POSTGRES_DB: customers_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Passw0rd
+    ports:
+      - "5433:5432"
+    volumes:
+      - ./sql/customersDB:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d customers_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  accounts_db:
+    image: postgres
+    environment:
+      POSTGRES_DB: accounts_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Passw0rd
+    ports:
+      - "5434:5432"
+    volumes:
+      - ./sql/accountsDB:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d accounts_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  customer_app:
+    image: customers-microservice
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://customers_db/customers_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: Passw0rd
+      SPRING_KAFKA_PRODUCER_BOOTSTRAP_SERVERS: kafkabroker:29092
+      SPRING_KAFKA_ADMIN_PROPERTIES_BOOTSTRAP_SERVERS: kafkabroker:29092
+      SPRING_KAFKA_TOPIC: test-topic
+    ports:
+      - "8081:8080"
+    depends_on:
+      customers_db:
+        condition: service_healthy
+      kafkabroker:
+        condition: service_healthy
+
+  account_app:
+    image: accounts-microservice
+    environment:
+      SPRING_R2DBC_URL: r2dbc:postgresql://accounts_db/accounts_db
+      SPRING_R2DBC_USERNAME: postgres
+      SPRING_R2DBC_PASSWORD: Passw0rd
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafkabroker:29092
+      SPRING_KAFKA_TOPIC: test-topic
+    ports:
+      - "8082:8080"
+    depends_on:
+      accounts_db:
+        condition: service_healthy
+      kafkabroker:
+        condition: service_healthy

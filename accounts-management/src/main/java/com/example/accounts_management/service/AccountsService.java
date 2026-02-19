@@ -60,7 +60,7 @@ public class AccountsService {
         return findById(accountId)
                 .switchIfEmpty(Mono.error(new BusinessException(HttpStatus.NOT_FOUND, "Account not found")))
                 .flatMap(accountResponse ->
-                        movementsRepository.findByAccountId(accountResponse.getId())
+                        movementsRepository.findByAccountIdOrderByDateDesc(accountResponse.getId())
                                 .hasElements() // Mono<Boolean>
                                 .flatMap(hasMovements -> {
                                     if (hasMovements) {

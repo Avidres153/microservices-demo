@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 
 @Table(name = "account")
 @Getter
+@Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor

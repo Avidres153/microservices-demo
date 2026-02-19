@@ -7,12 +7,14 @@ import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
 @Table(name = "customer")
 @Getter
+@Setter
 @SuperBuilder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,10 +49,5 @@ public class Customer extends Person {
         customerResponse.setStatus(customer.getStatus());
 
         return customerResponse;
-    }
-
-    public Customer setId(Long id) {
-        this.id = id;
-        return this;
     }
 }
